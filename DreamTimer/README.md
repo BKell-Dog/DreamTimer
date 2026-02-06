@@ -55,26 +55,37 @@ The device starts an internal counter and counts up, displaying the current time
 
 ```mermaid
 graph TD
-	Init --> Awake
-	Awake --> LightYellowLED
-	Awake --> OffBlueLED
-	Awake --> IncrementAwake
-	IncrementAwake --> Awake
-	Awake -->|button press| Asleep
-	Asleep --> LightBlueLED
-	Asleep --> OffYellowLED
-	Asleep --> IncrementAsleep
-	IncrementAsleep --> Asleep
-	Asleep -->|button press| Awake
+    Init --> Awake
 
-	Awake[State: Awake]
-	LightYellowLED[Light Yellow LED]
-	OffYellowLED[Turn Off Yellow LED]
-	IncrementAwake[Increment Counter]
-	Asleep[State: Asleep]
-	LightBlueLED[Light Blue LED]
-	OffBlueLED[Turn Off Blue LED]
-	IncrementAsleep[Increment Counter]
+    Awake -->|button press| Asleep
+    Asleep -->|button press| Awake
+
+    subgraph AwakeState
+        direction TB
+        Awake --> LightYellowLED
+        Awake --> OffBlueLED
+        Awake --> IncrementAwake
+        IncrementAwake --> Awake
+    end
+
+    subgraph AsleepState
+        direction TB
+        Asleep --> LightBlueLED
+        Asleep --> OffYellowLED
+        Asleep --> IncrementAsleep
+        IncrementAsleep --> Asleep
+    end
+
+    Awake[State: Awake]
+    Asleep[State: Asleep]
+
+    LightYellowLED[Light Yellow LED]
+    OffBlueLED[Turn Off Blue LED]
+    IncrementAwake[Increment Counter]
+
+    LightBlueLED[Light Blue LED]
+    OffYellowLED[Turn Off Yellow LED]
+    IncrementAsleep[Increment Counter]
 ```
 
 ## Roadmap
