@@ -28,10 +28,9 @@ The device connects to Wifi and fetches the current time from the internet, then
 The device will read the config data from the EEPROM and use the Wifi credentials therein to connect to the internet and (attempt to) fetch the time from an NTP server. If NTP fetch fails, it will display "FETCH FAILED" on the LCD; if successful, it will display the current time and count up each second. Device will reconnect every five minutes to recalibrate the internal time to the NTP server.
 
 ```mermaid
-graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
+graph MODE_CLOCK
+    Init-->ReadConfig
+    ReadConfig-->D: failure
     C-->D;
 ```
 
