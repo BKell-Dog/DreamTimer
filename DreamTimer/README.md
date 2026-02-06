@@ -21,6 +21,27 @@ The device needs to be configured.
 
 The device will transmit a Wifi access point for the user to connect to. The user will connect to this AP with their phone or laptop, etc., and the device will serve a ocnfiguration page where the user can input variables. Once the user saves the page, the input data will be written to the EEPROM and stored for later. In this mode the LEDs will be off and the LCD will either be off or show horizontal dashes.
 
+MODE_CONFIG overrides both other modes: it is toggled through a hardware switch, and if it is ON, then the switch controlling TIMER vs. CLOCK is *completely ignored* in favor of the CONFIG switch.
+
+```mermaid
+graph TD
+	Init --> ActivateAP
+	User -->|connects| ActivateAP
+	ActivateAP --> ConfigPage
+	User -->|enters data| ConfigPage
+	ConfigPage -->|serves HTML page| User
+	ConfigPage -->|save success| SuccessPage
+	ConfigPage -->|save failure| FailurePage
+	FailurePage -->|try again| ConfigPage
+
+	ActivateAP[Activate Wifi Access Point]
+	WriteConfig[Write Config to EEPROM]
+	ConfigPage[Config Web Page for User]
+	Save[User Saves Data]
+	SuccessPage[Config Written Successfully]
+	FailurePage[Config Failed to Write]
+```
+
 ### MODE_CLOCK
 
 The device connects to Wifi and fetches the current time from the internet, then displays that time.

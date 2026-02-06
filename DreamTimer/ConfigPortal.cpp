@@ -84,7 +84,7 @@ String ConfigPortal::getConfigPage() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DREAM Clock Setup</title>
+  <title>Dream Timer Setup</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
