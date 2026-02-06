@@ -76,6 +76,9 @@ graph TD
         IncrementAsleep --> Asleep
     end
 
+    IncrementAwake --> DisplayTime
+    IncrementAsleep --> DisplayTime
+
     Awake[State: Awake]
     Asleep[State: Asleep]
 
@@ -86,6 +89,8 @@ graph TD
     LightBlueLED[Light Blue LED]
     OffYellowLED[Turn Off Yellow LED]
     IncrementAsleep[Increment Counter]
+
+    DisplayTime[Display Counter]
 ```
 
 ## Roadmap
