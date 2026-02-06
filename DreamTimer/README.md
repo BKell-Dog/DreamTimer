@@ -42,7 +42,7 @@ graph TD
 	SuccessPage[Config Written Successfully]
 	FailurePage[Error: Config Failed to Write]
 	DisplayError[Display Error on LCD]
-	DisplayConfig[Display "CONFIG" on LCD to Show Mode]
+	DisplayConfig[Display CONFIG on LCD to Show Mode]
 ```
 
 ### MODE_CLOCK
