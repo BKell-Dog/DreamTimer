@@ -1,5 +1,5 @@
 /*
- * DREAM Clock - Modular Version
+ * DREAM Timer
  * 
  * A sleep tracking device with three modes:
  * - CLOCK: Displays current time (12-hour format) synced via NTP
@@ -33,13 +33,11 @@
 #define WAKE_LED_PIN   17   // LED for AWAKE state
 
 // Note: I2C pins for EEPROM (SDA=21, SCL=22) are defined in ConfigStorage.cpp
-// But CONFIG_PIN is on GPIO 22, so we need to adjust EEPROM to use different pins
-// Let's use GPIO 25 (SDA) and GPIO 26 (SCL) for EEPROM instead
 
 // ========== TIMING CONSTANTS ==========
 const unsigned long DISPLAY_UPDATE_MS = 1000UL;      // Display refresh rate
 const unsigned long WIFI_CONNECT_TIMEOUT_MS = 10000; // WiFi connection timeout
-const unsigned long NTP_SYNC_INTERVAL_MS = 60000UL;  // NTP sync every 60 seconds
+const unsigned long NTP_SYNC_INTERVAL_MS = 300000UL;  // NTP sync every 300 seconds = 5 minutes
 const unsigned long BUTTON_DEBOUNCE_MS = 50;         // Button debounce time
 
 // ========== SYSTEM ENUMS ==========
@@ -97,7 +95,7 @@ void setup() {
   Serial.begin(115200);
   delay(100);
   Serial.println("\n========================================");
-  Serial.println("    DREAM Clock - Modular Edition");
+  Serial.println("    DREAM Timer    ");
   Serial.println("========================================\n");
 
   // Initialize pins
@@ -334,6 +332,7 @@ void wifiConnectBlocking() {
   }
 
   Serial.printf("[WiFi] Connecting to '%s'...\n", config.ssid.c_str());
+  Serial.printf("[WiFi] Using password '%s'...\n", config.password.c_str());
   WiFi.mode(WIFI_STA);
   WiFi.begin(config.ssid.c_str(), config.password.c_str());
 

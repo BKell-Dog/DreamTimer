@@ -21,6 +21,9 @@ public:
   
   // Show "CONFIG" message or pattern
   void showConfigMode();
+
+  // Flash a message with multiple parts (2-phase animation)
+  void flashMessage(const char* messages[], int messageCount, unsigned long currentMillis, unsigned long flashInterval = 800);
   
   // Clear display
   void clear();
@@ -28,6 +31,9 @@ public:
 private:
   TM1637TinyDisplay6* display;
   uint8_t digits[6];
+
+  // Helper to display a 6-character string (left-aligned, pads with blanks)
+  void displayString(const char* str);
   
   // Helper to set digits with leading zero suppression
   void setDigitsWithLeadingZeroSuppression(int d0, int d1, int d2, int d3, int d4, int d5);

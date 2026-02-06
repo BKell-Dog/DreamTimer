@@ -1,0 +1,146 @@
+PERSONAL USE ONLY LICENSE
+
+Copyright (c) 2026 DREAM Clock Project
+
+TERMS AND CONDITIONS
+
+1. GRANT OF LICENSE
+
+   Subject to the terms and conditions of this license, the copyright holder
+   grants you a worldwide, royalty-free, non-exclusive license to use, copy,
+   modify, and distribute this software and associated documentation files
+   (the "Project") for PERSONAL, NON-COMMERCIAL purposes only.
+
+2. PERMITTED USES
+
+   You may:
+   
+   a) Use the Project for personal projects and learning
+   b) Build physical devices for your own personal use
+   c) Modify the source code for your own personal use
+   d) Share your modifications with others under this same license
+   e) Create derivative works for your own personal use
+
+3. PROHIBITED USES
+
+   You may NOT:
+   
+   a) Use this Project or any derivatives for commercial purposes
+   b) Sell devices built using this Project
+   c) Incorporate this Project into commercial products or services
+   d) Offer this Project as a paid service or product
+   e) Use this Project in any revenue-generating activity
+   f) Sublicense, sell, or distribute this Project for profit
+   g) Use this Project in a business, even if non-profit
+   h) Accept payment for devices, services, or consultations based on this Project
+
+4. DEFINITION OF COMMERCIAL USE
+
+   "Commercial use" means any use of the Project that is primarily intended for
+   or directed toward commercial advantage or monetary compensation. This includes,
+   but is not limited to:
+   
+   - Manufacturing and selling physical devices
+   - Offering paid services or support
+   - Including in commercial products
+   - Crowdfunding campaigns for manufacturing
+   - Contract work or consulting based on this Project
+   - Any form of monetization
+
+5. ATTRIBUTION
+
+   When sharing or distributing modifications, you must:
+   
+   a) Retain all copyright notices from the original Project
+   b) Include a copy of this license
+   c) Clearly indicate any modifications made
+   d) Attribute the original Project and author
+
+6. DISTRIBUTION OF MODIFICATIONS
+
+   If you distribute modified versions, you must:
+   
+   a) Distribute under this same Personal Use Only License
+   b) Make source code available for your modifications
+   c) Not imply endorsement by the original author
+   d) Clearly mark as a modified version
+
+7. NO WARRANTY
+
+   THE PROJECT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+8. LIMITATION OF LIABILITY
+
+   IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+   ARISING FROM, OUT OF OR IN CONNECTION WITH THE PROJECT OR THE USE OR OTHER
+   DEALINGS IN THE PROJECT.
+
+9. HARDWARE DESIGNS
+
+   The hardware schematics, PCB layouts, and design files included in this
+   Project are subject to the same terms. You may build devices for personal
+   use but may not manufacture or sell them commercially.
+
+10. TERMINATION
+
+    This license automatically terminates if you violate any of its terms.
+    Upon termination, you must:
+    
+    a) Cease all use of the Project
+    b) Destroy all copies in your possession
+    c) Cease distribution of any derivatives
+
+11. COMMERCIAL LICENSING
+
+    If you wish to use this Project for commercial purposes, you must obtain
+    written permission from the copyright holder. Contact information may be
+    found in the Project documentation.
+
+12. GOVERNING LAW
+
+    This license shall be governed by and construed in accordance with the
+    laws of the jurisdiction in which the copyright holder resides, without
+    regard to its conflict of law provisions.
+
+13. SEVERABILITY
+
+    If any provision of this license is held to be unenforceable, such provision
+    shall be reformed only to the extent necessary to make it enforceable, and
+    the remainder of the license shall remain in full effect.
+
+14. ENTIRE AGREEMENT
+
+    This license constitutes the entire agreement between the parties concerning
+    the subject matter hereof.
+
+ACCEPTANCE
+
+By using, copying, modifying, or distributing the Project, you indicate your
+acceptance of this license and all its terms and conditions.
+
+EXAMPLES OF ACCEPTABLE USE:
+- Building one for yourself and showing it to friends
+- Learning from the code for educational purposes
+- Building one as a gift (no payment accepted)
+- Sharing your modifications on GitHub (with this license)
+- Using it in a personal hobby project
+- Teaching concepts using this as an example
+
+EXAMPLES OF PROHIBITED USE:
+- Selling assembled devices on Etsy, eBay, or anywhere else
+- Offering it as a product on Kickstarter or Indiegogo
+- Using it in a commercial IoT product
+- Building them for customers as a service business
+- Including it in a paid workshop or course
+- Accepting donations in exchange for devices
+- Manufacturing and distributing, even at cost
+
+If you have questions about whether your intended use is permitted, contact
+the copyright holder before proceeding.
+
+---
+
+For commercial licensing inquiries, please refer to the project documentation.

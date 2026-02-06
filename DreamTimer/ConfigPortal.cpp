@@ -8,10 +8,10 @@ void ConfigPortal::start() {
   
   // Start AP mode
   WiFi.mode(WIFI_AP);
-  WiFi.softAP("DREAM_Clock_Setup");
+  WiFi.softAP("Dream_Timer_Setup");
   
   IPAddress IP = WiFi.softAPIP();
-  Serial.print("[CONFIG PORTAL] AP Started. Connect to: DREAM_Clock_Setup");
+  Serial.print("[CONFIG PORTAL] AP Started. Connect to: Dream_Timer_Setup");
   Serial.print(" and go to: http://");
   Serial.println(IP);
   
@@ -168,8 +168,8 @@ String ConfigPortal::getConfigPage() {
 </head>
 <body>
   <div class="container">
-    <h1>⏰ DREAM Clock Setup</h1>
-    <p class="subtitle">Configure your sleep tracking clock</p>
+    <h1>⏰ Dream Timer Setup</h1>
+    <p class="subtitle">Configure your sleep tracking timer</p>
     
     <div class="info">
       💡 Enter your WiFi credentials and timezone to get started
@@ -264,8 +264,9 @@ String ConfigPortal::getSuccessPage() {
     let seconds = 3;
     setInterval(() => {
       document.getElementById('countdown').textContent = seconds;
-      if (seconds < 0) {
+      if (seconds > 0)
         seconds--;
+      if (seconds < 0) {
         document.getElementById('message').textContent = 'Restarting now...';
       }
     }, 1000);
@@ -275,7 +276,7 @@ String ConfigPortal::getSuccessPage() {
   <div class="container">
     <div class="checkmark">✅</div>
     <h1>Configuration Saved!</h1>
-    <p>Your DREAM Clock is now configured.</p>
+    <p>Your Dream Timer is now configured.</p>
     <p id="message">Device will restart in:</p>
     <div class="countdown" id="countdown">3</div>
     <p style="font-size: 12px; color: #999; margin-top: 20px;">
