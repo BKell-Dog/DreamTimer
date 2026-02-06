@@ -34,7 +34,7 @@ graph TD
     ReadConfig -->|success| ConnectToWifi
     ConnectToWifi --> FetchNTP
     FetchNTP -->|success| DisplayTime
-    FetchNTP -->|failure - retry| FetchNTP
+    FetchNTP -->|failure: retry| FetchNTP
     FetchNTP -->|failure x5| FetchError
     UseDefaults -->|success| ConnectToWifi
     UseDefaults -->|failure| CredentialError
@@ -47,7 +47,34 @@ graph TD
     DisplayTime[Display Time]
     FetchError[Error: Failed to Fetch NTP Time]
     CredentialError[Error: Cannot connect to wifi. Configure me!]
+```
 
+### MODE_TIMER
+
+The device starts an internal counter and counts up, displaying the current timer on the LCD screen. At the same time, depending on system state, lights up either the yellow AWAKE LED or the blue ASLEEP LED. The system monitors a hardware button for presses, and if pressed, switches the internal system state, resets the counter, and toggles each LED on/off.
+
+```mermaid
+graph TD
+	Init --> Awake
+	Awake --> LightYellowLED
+	Awake --> OffBlueLED
+	Awake --> IncrementAwake
+	IncrementAwake --> Awake
+	Awake -->|button press| Asleep
+	Asleep --> LightBlueLED
+	Asleep --> OffYellowLED
+	Asleep --> IncrementAsleep
+	IncrementAsleep --> Asleep
+	Asleep -->|button press| Awake
+
+	Awake[State: Awake]
+	LightYellowLED[Light Yellow LED]
+	OffYellowLED[Turn Off Yellow LED]
+	IncrementAwake[Increment Counter]
+	Asleep[State: Asleep]
+	LightBlueLED[Light Blue LED]
+	OffBlueLED[Turn Off Blue LED]
+	IncrementAsleep[Increment Counter]
 ```
 
 ## Roadmap
