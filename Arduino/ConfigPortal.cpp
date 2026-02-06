@@ -264,8 +264,8 @@ String ConfigPortal::getSuccessPage() {
     let seconds = 3;
     setInterval(() => {
       document.getElementById('countdown').textContent = seconds;
-      seconds--;
       if (seconds < 0) {
+        seconds--;
         document.getElementById('message').textContent = 'Restarting now...';
       }
     }, 1000);
