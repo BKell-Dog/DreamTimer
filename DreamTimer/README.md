@@ -32,10 +32,22 @@ graph TD
     Init --> ReadConfig
     ReadConfig -->|failure| UseDefaults
     ReadConfig -->|success| ConnectToWifi
+    ConnectToWifi --> FetchNTP
+    FetchNTP -->|success| DisplayTime
+    FetchNTP -->|failure - retry| FetchNTP
+    FetchNTP -->|failure x5| FetchError
+    UseDefaults -->|success| ConnectToWifi
+    UseDefaults -->|failure| CredentialError
+    DisplayTime -->|refetch every 5 min| FetchNTP
 
     ReadConfig[Read Config]
     UseDefaults[Use Defaults]
     ConnectToWifi[Connect to Wifi]
+    FetchNTP[Fetch Time from NTP Server]
+    DisplayTime[Display Time]
+    FetchError[Error: Failed to Fetch NTP Time]
+    CredentialError[Error: Cannot connect to wifi. Configure me!]
+
 ```
 
 ## Roadmap
