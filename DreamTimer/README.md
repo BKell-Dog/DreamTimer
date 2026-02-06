@@ -26,20 +26,23 @@ MODE_CONFIG overrides both other modes: it is toggled through a hardware switch,
 ```mermaid
 graph TD
 	Init --> ActivateAP
+	Init --> DisplayConfig
 	User -->|connects| ActivateAP
 	ActivateAP --> ConfigPage
 	User -->|enters data| ConfigPage
-	ConfigPage -->|serves HTML page| User
-	ConfigPage -->|save success| SuccessPage
-	ConfigPage -->|save failure| FailurePage
+	ConfigPage --> WriteConfig
+	WriteConfig -->|save success| SuccessPage
+	WriteConfig -->|save failure| FailurePage
 	FailurePage -->|try again| ConfigPage
+	FailruePage --> DisplayError
 
 	ActivateAP[Activate Wifi Access Point]
 	WriteConfig[Write Config to EEPROM]
-	ConfigPage[Config Web Page for User]
-	Save[User Saves Data]
+	ConfigPage[Config Input Web Page]
 	SuccessPage[Config Written Successfully]
-	FailurePage[Config Failed to Write]
+	FailurePage[Error: Config Failed to Write]
+	DisplayError[Display Error on LCD]
+	DisplayConfig[Display "CONFIG" on LCD to Show Mode]
 ```
 
 ### MODE_CLOCK
