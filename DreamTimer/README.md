@@ -2,7 +2,7 @@
 
 ## Mode and State
 
-The program recognizes three system modes and two system states which represent the configuration of user inputs at any time. THey are,
+The program recognizes three system modes and two system states which represent the configuration of user inputs at any time. They are,
 
 Modes
 - MODE_CONFIG

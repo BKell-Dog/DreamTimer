@@ -1,106 +1,86 @@
 /*
- * DREAM Timer
- * 
- * A sleep tracking device with three modes:
- * - CLOCK: Displays current time (12-hour format) synced via NTP
- * - TIMER: Counts elapsed time with AWAKE/ASLEEP states
- * - CONFIG: Configuration portal for WiFi and timezone setup
- * 
- * Hardware:
- * - ESP32
- * - TM1637 6-digit display
- * - 24LC256 EEPROM (I2C)
- * - 2 LEDs (AWAKE/ASLEEP indicators)
- * - 2 switches (MODE, CONFIG)
- * - 1 button (state toggle/reset)
- */
+The DREAM Clock
+
+This script will control the Dream Clock device.
+Device will exist in two modes: CLOCK and TIMER.
+CLOCK will connect to Wifi periodically and to learn the correct time in EST, and show that time on the TM1637
+display. It will count up offline, but reconnect one per period (e.g. 1 min) to fetch the correct time.
+TIMER will simply count up from 0, in units of seconds, minutes, and hours, and can be reset to 0 via a button.
+In TIMER there will also be two system states, indicated by activating a different LED: SLEEP and WAKE, which
+indicate if the subject is asleep or awake. Pressing the aforementioned button will both reset the timer and
+invert which LED is on.
+
+The two system modes, CLOCK and TIMER, will be determined by a circuit switch which will either drive a pin HIGH
+or LOW, and the TIMER state will be determined by an internal system variable and reset/switched by a button press
+connected to a pin. There will also be an ON/OFF switch which breaks the main battery circuit.
+
+MODE
+ - CLOCK
+  - Every 1 min, connect to Wifi and attempt to query time.
+  - Display EST and count up every second.
+  - Both LEDs OFF
+ - TIMER
+  - State
+    - SLEEP
+      - Sleep LED on.
+      - Timer reset to 0.
+      - Count up.
+    - WAKE
+      - Wake LED on.
+      - Timer reset to 0.
+      - Count up.
+*/
 
 #include <Arduino.h>
 #include <WiFi.h>
 #include <time.h>
 #include <TM1637TinyDisplay6.h>
-#include "ConfigStorage.h"
 #include "DisplayHelper.h"
-#include "ConfigPortal.h"
+#include "HardwareConfig.h"
+#include "StateManager.h"
+#include "Timer.h"
 
-// ========== PIN DEFINITIONS ==========
-#define CLK_PIN        18   // TM1637 CLK
-#define DIO_PIN        19   // TM1637 DIO
-#define MODE_PIN       21   // Mode switch: HIGH = CLOCK, LOW = TIMER
-#define CONFIG_PIN     22   // Config switch: LOW = CONFIG mode (overrides MODE_PIN)
-#define BUTTON_PIN     23   // Pushbutton (active LOW)
-#define SLEEP_LED_PIN  16   // LED for ASLEEP state
-#define WAKE_LED_PIN   17   // LED for AWAKE state
-
-// Note: I2C pins for EEPROM (SDA=21, SCL=22) are defined in ConfigStorage.cpp
-
-// ========== TIMING CONSTANTS ==========
-const unsigned long DISPLAY_UPDATE_MS = 1000UL;      // Display refresh rate
-const unsigned long WIFI_CONNECT_TIMEOUT_MS = 10000; // WiFi connection timeout
-const unsigned long NTP_SYNC_INTERVAL_MS = 300000UL;  // NTP sync every 300 seconds = 5 minutes
-const unsigned long BUTTON_DEBOUNCE_MS = 50;         // Button debounce time
-
-// ========== SYSTEM ENUMS ==========
-enum SystemMode { MODE_CLOCK, MODE_TIMER, MODE_CONFIG };
-enum SystemState { AWAKE, ASLEEP };
-
-// ========== GLOBAL OBJECTS ==========
-TM1637TinyDisplay6 display(CLK_PIN, DIO_PIN);
-DisplayHelper displayHelper(&display);
-ConfigStorage configStorage;
-ConfigPortal* configPortal = nullptr;
-
-// ========== CONFIGURATION ==========
-DreamClockConfig config;
+// U.S. Eastern time (EST/EDT)
+const char* TZ_CONFIG = "EST5EDT,M3.2.0/2,M11.1.0/2";
 const char* NTP_SERVER = "pool.ntp.org";
 
-// ========== RUNTIME STATE ==========
-SystemMode systemMode = MODE_CLOCK;
-SystemState systemState = AWAKE;
+// Timing / behavior
+const unsigned long BUTTON_SHORT_MS = 800;  // <= this = short press (toggle SLEEP/WAKE and reset)
+const unsigned long BUTTON_LONG_MS  = 1500; // > this = long press (reset timer)
+// ===================================
+
+StateManager systemState;
+
+TM1637TinyDisplay6 display(CLK_PIN, DIO_PIN);
+DisplayHelper displayHelper(&display);
+uint8_t digits[6];
+
+Timer timer(systemState, displayHelper);
+
 unsigned long lastDisplayUpdate = 0;
 unsigned long lastNtpSyncAttempt = 0;
 bool wifiConnected = false;
 
-// Timer state
-unsigned long timerStartMillis = 0;
-unsigned long timerAccumulatedSeconds = 0;
+// CLOCK sync bookkeeping
+time_t lastSyncedEpoch = 0;          // last epoch seconds we received from NTP
+unsigned long long lastSyncedMillis = 0ULL; // millis() at the moment we recorded lastSyncedEpoch
 
-// Button handling
-int lastButtonState = HIGH;
-unsigned long lastDebounceTime = 0;
-unsigned long buttonPressedAt = 0;
-bool buttonWasDown = false;
-
-// Clock sync tracking
-time_t lastSyncedEpoch = 0;
-unsigned long long lastSyncedMillis = 0ULL;
-
-// ========== FORWARD DECLARATIONS ==========
-void checkModeSwitches();
-void setMode(SystemMode m);
-void clockTick();
-void timerTick();
-void configTick();
+// Forward declarations
 void wifiConnectBlocking();
 void wifiDisconnectSave();
-void tryNtpSync();
-time_t getCurrentClockTime();
+void tryNtpSync(); // attempt one sync and record baseline if successful
+time_t getCurrentClockTime(); // return computed local clock (lastSyncedEpoch + elapsed)
 void updateDisplayClock();
 void updateDisplayTimer();
-void handleButton();
-void applyLedState();
 
-// ========== SETUP ==========
 void setup() {
+  // Initialize Serial Monitor
   Serial.begin(115200);
-  delay(100);
-  Serial.println("\n========================================");
-  Serial.println("    DREAM Timer    ");
-  Serial.println("========================================\n");
+  delay(50);
+  Serial.println("\n=== DREAM Clock Starting ===");
 
   // Initialize pins
-  pinMode(MODE_PIN, INPUT_PULLUP);
-  pinMode(CONFIG_PIN, INPUT_PULLUP);
+  pinMode(MODE_PIN, INPUT_PULLUP); // Button & switch are ACTIVE LOW
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(SLEEP_LED_PIN, OUTPUT);
   pinMode(WAKE_LED_PIN, OUTPUT);
@@ -109,221 +89,74 @@ void setup() {
   display.begin();
   display.setBrightness(BRIGHT_HIGH);
   display.clear();
-  Serial.println("[INIT] Display initialized");
 
-  // Initialize EEPROM
-  configStorage.begin();
+  systemState.begin();
 
-  // Load configuration
-  if (configStorage.isConfigured()) {
-    config = configStorage.loadConfig();
-    Serial.println("[INIT] Configuration loaded from EEPROM");
-  } else {
-    // Default configuration
-    Serial.println("[INIT] No configuration found, using defaults");
-    config.ssid = "YourWiFiSSID";
-    config.password = "YourWiFiPassword";
-    config.timezone = "EST5EDT,M3.2.0/2,M11.1.0/2";
-  }
+  // Initialize mode at boot
+  systemState.checkModeSwitch();
 
-  // Check initial mode
-  checkModeSwitches();
-
-  // Initialize based on mode
-  if (systemMode == MODE_CONFIG) {
-    // Config mode - handled in loop
-    Serial.println("[INIT] Starting in CONFIG mode");
-  } else if (systemMode == MODE_CLOCK) {
-    Serial.println("[INIT] Starting in CLOCK mode");
+  // If starting in CLOCK mode, begin Wi-Fi + NTP
+  if (systemState.getCurrentMode() == SystemMode::CLOCK) {
+    Serial.println("[INIT] Starting in CLOCK mode -> connecting Wi-Fi & NTP");
     wifiConnectBlocking();
     if (wifiConnected) {
-      configTzTime(config.timezone.c_str(), NTP_SERVER);
-      tryNtpSync();
+      configTzTime(TZ_CONFIG, NTP_SERVER);
+      tryNtpSync(); // immediate sync attempt, records baseline if successful
       lastNtpSyncAttempt = millis();
+    } else {
+      Serial.println("[INIT] Wi-Fi not connected; will attempt periodic connect/sync.");
     }
   } else {
-    Serial.println("[INIT] Starting in TIMER mode");
+    Serial.println("[INIT] Starting in TIMER mode -> Wi-Fi disabled to save power");
     wifiDisconnectSave();
-    timerStartMillis = millis();
-    timerAccumulatedSeconds = 0;
+    timer.activate();
   }
-
-  applyLedState();
-  lastDisplayUpdate = millis();
-  
-  Serial.println("[INIT] Setup complete\n");
 }
 
-// ========== MAIN LOOP ==========
+// ------------------------- Main Loop -------------------------
 void loop() {
-  // Check if mode switches have changed
-  checkModeSwitches();
+  // Pre-step: check if the hardware pin changed and if so, change the mode.
+  systemState.checkModeSwitch();
 
-  // Run appropriate mode
-  switch (systemMode) {
-    case MODE_CLOCK:
-      clockTick();
-      break;
-    case MODE_TIMER:
-      timerTick();
-      break;
-    case MODE_CONFIG:
-      configTick();
-      break;
+  if (systemState.getCurrentMode() == SystemMode::CLOCK) {
+    clockTick();
+  } else {
+    // SystemMode = TIMER
+    timer.tick();
   }
 
-  delay(5);  // Small delay for background tasks
+  // tiny delay to yield to background (Wi-Fi / tasks)
+  delay(5);
 }
 
-// ========== MODE MANAGEMENT ==========
-void checkModeSwitches() {
-  int configPin = digitalRead(CONFIG_PIN);
-  
-  // CONFIG mode overrides everything (active LOW)
-  if (configPin == LOW) {
-    if (systemMode != MODE_CONFIG) {
-      Serial.println("[MODE] Config switch activated");
-      setMode(MODE_CONFIG);
-    }
-    return;
-  }
-  
-  // Normal mode switching (CLOCK/TIMER)
-  int modePin = digitalRead(MODE_PIN);
-  SystemMode desired = (modePin == HIGH) ? MODE_CLOCK : MODE_TIMER;
-  
-  if (desired != systemMode && systemMode != MODE_CONFIG) {
-    Serial.printf("[MODE] Switching to %s mode\n", 
-                  (desired == MODE_CLOCK) ? "CLOCK" : "TIMER");
-    setMode(desired);
-  }
-}
-
-void setMode(SystemMode m) {
-  SystemMode oldMode = systemMode;
-  systemMode = m;
-
-  if (m == MODE_CONFIG) {
-    // Entering CONFIG mode
-    Serial.println("[MODE] Entering CONFIG mode - starting portal");
-    
-    // Stop any existing WiFi connections
-    WiFi.disconnect(true);
-    
-    // Create and start config portal
-    if (configPortal == nullptr) {
-      configPortal = new ConfigPortal(&configStorage);
-    }
-    configPortal->start();
-    
-    // Show config mode on display
-    displayHelper.showConfigMode();
-    
-    // Turn off LEDs
-    digitalWrite(WAKE_LED_PIN, LOW);
-    digitalWrite(SLEEP_LED_PIN, LOW);
-    
-  } else if (m == MODE_CLOCK) {
-    // Entering CLOCK mode
-    if (oldMode == MODE_CONFIG && configPortal != nullptr) {
-      configPortal->stop();
-      delete configPortal;
-      configPortal = nullptr;
-      
-      // Reload config if it was saved
-      if (configStorage.isConfigured()) {
-        config = configStorage.loadConfig();
-      }
-    }
-    
-    Serial.println("[MODE] Entering CLOCK mode");
-    wifiConnectBlocking();
-    if (wifiConnected) {
-      configTzTime(config.timezone.c_str(), NTP_SERVER);
-      tryNtpSync();
-      lastNtpSyncAttempt = millis();
-    }
-    
-    // Turn off LEDs
-    digitalWrite(WAKE_LED_PIN, LOW);
-    digitalWrite(SLEEP_LED_PIN, LOW);
-    
-  } else if (m == MODE_TIMER) {
-    // Entering TIMER mode
-    if (oldMode == MODE_CONFIG && configPortal != nullptr) {
-      configPortal->stop();
-      delete configPortal;
-      configPortal = nullptr;
-    }
-    
-    Serial.println("[MODE] Entering TIMER mode");
-    wifiDisconnectSave();
-    
-    // Reset timer
-    timerStartMillis = millis();
-    timerAccumulatedSeconds = 0;
-    
-    // Apply LED state
-    applyLedState();
-    updateDisplayTimer();
-  }
-}
-
-// ========== MODE TICK FUNCTIONS ==========
 void clockTick() {
   unsigned long now = millis();
 
-  // Reconnect if disconnected
+  // If disconnected, try to reconnect every 5s
   if (!wifiConnected && (now - lastNtpSyncAttempt >= 5000UL)) {
-    Serial.println("[WiFi] Reconnecting...");
+    Serial.println("[WiFi] Attempting reconnect (CLOCK mode)");
     wifiConnectBlocking();
     if (wifiConnected) {
-      configTzTime(config.timezone.c_str(), NTP_SERVER);
+      configTzTime(TZ_CONFIG, NTP_SERVER);
     }
     lastNtpSyncAttempt = now;
   }
 
-  // Periodic NTP sync
+  // If connected, try NTP sync every NTP_SYNC_INTERVAL_MS
   if (wifiConnected && (now - lastNtpSyncAttempt >= NTP_SYNC_INTERVAL_MS)) {
-    Serial.println("[NTP] Periodic sync");
+    Serial.println("[NTP] Periodic sync attempt");
     tryNtpSync();
     lastNtpSyncAttempt = now;
   }
 
-  // Update display
+  // Update display every second
   if (now - lastDisplayUpdate >= DISPLAY_UPDATE_MS) {
     lastDisplayUpdate = now;
     updateDisplayClock();
   }
 }
 
-void timerTick() {
-  unsigned long now = millis();
-
-  // Handle button
-  handleButton();
-
-  // Update display
-  if (now - lastDisplayUpdate >= DISPLAY_UPDATE_MS) {
-    lastDisplayUpdate = now;
-    updateDisplayTimer();
-  }
-}
-
-void configTick() {
-  if (configPortal) {
-    configPortal->handleClient();
-    
-    // Check if config was saved
-    if (configPortal->configSaved()) {
-      Serial.println("[CONFIG] Configuration saved, restarting in 3 seconds...");
-      delay(3000);
-      ESP.restart();
-    }
-  }
-}
-
-// ========== WIFI & NTP ==========
+// ------------------------- Wi-Fi & NTP -------------------------
 void wifiConnectBlocking() {
   if (WiFi.status() == WL_CONNECTED) {
     wifiConnected = true;
@@ -331,10 +164,9 @@ void wifiConnectBlocking() {
     return;
   }
 
-  Serial.printf("[WiFi] Connecting to '%s'...\n", config.ssid.c_str());
-  Serial.printf("[WiFi] Using password '%s'...\n", config.password.c_str());
+  Serial.printf("[WiFi] Connecting to '%s' ...\n", WIFI_SSID);
   WiFi.mode(WIFI_STA);
-  WiFi.begin(config.ssid.c_str(), config.password.c_str());
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED && (millis() - start) < WIFI_CONNECT_TIMEOUT_MS) {
@@ -345,30 +177,32 @@ void wifiConnectBlocking() {
 
   if (WiFi.status() == WL_CONNECTED) {
     wifiConnected = true;
-    Serial.print("[WiFi] Connected! IP: ");
+    Serial.print("[WiFi] Connected, IP=");
     Serial.println(WiFi.localIP());
   } else {
     wifiConnected = false;
-    Serial.println("[WiFi] Connection failed");
+    Serial.println("[WiFi] Failed to connect (timeout)");
+    // optionally disable Wi-Fi to save power if not connected
     WiFi.disconnect(true);
   }
 }
 
 void wifiDisconnectSave() {
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("[WiFi] Disconnecting to save power");
+    Serial.println("[WiFi] Disconnecting to save power (TIMER mode)");
   }
   wifiConnected = false;
-  WiFi.disconnect(true);
+  WiFi.disconnect(true); // disconnect and erase credentials from driver to reduce radio activity
   WiFi.mode(WIFI_OFF);
 }
 
+// Attempt a synchronous NTP sync and record baseline (lastSyncedEpoch + lastSyncedMillis)
 void tryNtpSync() {
-  Serial.print("[NTP] Syncing");
+  Serial.print("[NTP] Trying to sync");
   time_t now = time(nullptr);
   unsigned long start = millis();
-  
-  while (now < 24 * 3600 && (millis() - start) < 8000) {
+  // Wait briefly until time() becomes "reasonable" (SNTP background may update)
+  while (now < 24 * 3600 && (millis() - start) < 8000) { // wait up to 8s
     delay(200);
     Serial.print(".");
     now = time(nullptr);
@@ -376,44 +210,49 @@ void tryNtpSync() {
   Serial.println();
 
   if (now < 24 * 3600) {
-    Serial.println("[NTP] Sync failed");
+    Serial.println("[NTP] Sync failed / no valid time received");
+    // keep lastSyncedEpoch untouched so clock will continue from last known value
   } else {
     lastSyncedEpoch = now;
-    lastSyncedMillis = millis();
-    
+    lastSyncedMillis = (unsigned long long)millis();
     struct tm tmInfo;
     localtime_r(&now, &tmInfo);
-    Serial.printf("[NTP] Synced: %04d-%02d-%02d %02d:%02d:%02d\n",
+    Serial.printf("[NTP] Synced: %04d-%02d-%02d %02d:%02d:%02d (recording baseline)\n",
                   tmInfo.tm_year + 1900, tmInfo.tm_mon + 1, tmInfo.tm_mday,
                   tmInfo.tm_hour, tmInfo.tm_min, tmInfo.tm_sec);
   }
 }
 
+// Compute current clock time using lastSyncedEpoch + elapsed seconds (millis-based)
 time_t getCurrentClockTime() {
   if (lastSyncedEpoch == 0) {
+    // No baseline yet — try to return system time() (may be wrong) or 0
     time_t t = time(nullptr);
     if (t >= 24 * 3600) return t;
     return 0;
   }
-  
-  unsigned long long nowMillis = millis();
+  unsigned long long nowMillis = (unsigned long long)millis();
   unsigned long long elapsedMs = nowMillis - lastSyncedMillis;
   time_t computed = lastSyncedEpoch + (time_t)(elapsedMs / 1000ULL);
   return computed;
 }
 
-// ========== DISPLAY FUNCTIONS ==========
+// ------------------------- Display functions -------------------------
 void updateDisplayClock() {
   time_t computed = getCurrentClockTime();
-  
   if (computed == 0) {
-    Serial.println("[CLOCK] No valid time");
-    displayHelper.showConfigMode();  // Show dashes
+    // No valid time yet — show dashes
+    Serial.println("[CLOCK] No valid time baseline; showing ----");
+    for (int i = 0; i < 6; ++i) digits[i] = display.encodeDigit(10); // attempt blank (may show nothing)
+    display.setSegments(digits, 6, 0);
     return;
   }
 
   struct tm tmInfo;
-  localtime_r(&computed, &tmInfo);
+  // Convert computed epoch to local broken-down time respecting TZ (we used configTzTime earlier)
+  // localtime_r expects the system timezone to be set; timegm/time zone handling is via configTzTime
+  time_t t_for_localtime = computed;
+  localtime_r(&t_for_localtime, &tmInfo);
 
   int h = tmInfo.tm_hour;
   int m = tmInfo.tm_min;
@@ -428,75 +267,4 @@ void updateDisplayClock() {
   if (h12 == 0) h12 = 12;
   
   Serial.printf("[CLOCK] %d:%02d:%02d %s\n", h12, m, s, ampm);
-}
-
-void updateDisplayTimer() {
-  unsigned long elapsedSeconds = timerAccumulatedSeconds;
-  unsigned long delta = (millis() - timerStartMillis) / 1000UL;
-  elapsedSeconds += delta;
-
-  unsigned int hours = elapsedSeconds / 3600;
-  unsigned int minutes = (elapsedSeconds % 3600) / 60;
-  unsigned int seconds = elapsedSeconds % 60;
-
-  if (hours > 99) hours = hours % 100;  // Wrap to 2 digits
-
-  // Display with leading zero suppression
-  displayHelper.displayTimer(hours, minutes, seconds);
-
-  Serial.printf("[TIMER] %02u:%02u:%02u - %s\n",
-                hours, minutes, seconds,
-                systemState == AWAKE ? "AWAKE" : "ASLEEP");
-}
-
-// ========== BUTTON HANDLING ==========
-void handleButton() {
-  int raw = digitalRead(BUTTON_PIN);
-  unsigned long now = millis();
-
-  // Debounce
-  if (raw != lastButtonState) {
-    lastDebounceTime = now;
-    lastButtonState = raw;
-  }
-
-  if ((now - lastDebounceTime) > BUTTON_DEBOUNCE_MS) {
-    // Button pressed
-    if (raw == LOW && !buttonWasDown) {
-      buttonPressedAt = now;
-      buttonWasDown = true;
-    }
-
-    // Button released
-    if (raw == HIGH && buttonWasDown) {
-      buttonWasDown = false;
-
-      // Toggle state and reset timer
-      systemState = (systemState == AWAKE) ? ASLEEP : AWAKE;
-      timerAccumulatedSeconds = 0;
-      timerStartMillis = now;
-      
-      Serial.printf("[BUTTON] Toggled to %s, timer reset\n",
-                    systemState == AWAKE ? "AWAKE" : "ASLEEP");
-      
-      applyLedState();
-      updateDisplayTimer();
-    }
-  }
-}
-
-// ========== LED CONTROL ==========
-void applyLedState() {
-  if (systemMode == MODE_TIMER) {
-    if (systemState == AWAKE) {
-      digitalWrite(WAKE_LED_PIN, HIGH);
-      digitalWrite(SLEEP_LED_PIN, LOW);
-    } else {
-      digitalWrite(WAKE_LED_PIN, LOW);
-      digitalWrite(SLEEP_LED_PIN, HIGH);
-    }
-  } else {
-    digitalWrite(WAKE_LED_PIN, LOW);
-    digitalWrite(SLEEP_LED_PIN, LOW);
-  }
 }

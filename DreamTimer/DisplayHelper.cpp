@@ -42,15 +42,6 @@ void DisplayHelper::displayNumber(unsigned long number) {
   setDigitsWithLeadingZeroSuppression(d0, d1, d2, d3, d4, d5);
 }
 
-void DisplayHelper::showConfigMode() {
-  // Display "CONFIG" pattern - could be animated or static
-  // For now, show "------" (dashes)
-  for (int i = 0; i < 6; i++) {
-    digits[i] = 0b01000000;  // Middle segment (dash)
-  }
-  display->setSegments(digits, 6, 0);
-}
-
 void DisplayHelper::flashMessage(const char* messages[], int messageCount, unsigned long currentMillis, unsigned long flashInterval) {
   // Calculate which message to show based on time
   unsigned long cycleTime = currentMillis / flashInterval;

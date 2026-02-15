@@ -18,9 +18,6 @@ public:
   
   // Display a 6-digit number with leading zero suppression
   void displayNumber(unsigned long number);
-  
-  // Show "CONFIG" message or pattern
-  void showConfigMode();
 
   // Flash a message with multiple parts (2-phase animation)
   void flashMessage(const char* messages[], int messageCount, unsigned long currentMillis, unsigned long flashInterval = 800);
