@@ -34,7 +34,7 @@ graph TD
 	WriteConfig -->|save success| SuccessPage
 	WriteConfig -->|save failure| FailurePage
 	FailurePage -->|try again| ConfigPage
-	FailruePage --> DisplayError
+	FailurePage --> DisplayError
 
 	ActivateAP[Activate Wifi Access Point]
 	WriteConfig[Write Config to EEPROM]

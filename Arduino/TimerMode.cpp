@@ -1,11 +1,11 @@
-#include "Timer.h"
+#include "TimerMode.h"
 
 // Forward Declarations
 void updateDisplay();
 void updateLEDs();
 void LEDsOff();
 
-Timer::Timer(StateManager& sm, DisplayHelper& dh)
+TimerMode::TimerMode(StateManager& sm, DisplayHelper& dh)
   : stateManager(sm),
     displayHelper(dh),
     timerStartMillis(0),
@@ -13,7 +13,7 @@ Timer::Timer(StateManager& sm, DisplayHelper& dh)
     lastDisplayUpdate(0) {
 }
 
-void Timer::activate() {
+void TimerMode::activate() {
   Serial.println("[TIMER] Activating mode");
   
   // Reset timer state
@@ -26,12 +26,12 @@ void Timer::activate() {
   updateDisplay();
 }
 
-void Timer::deactivate() {
+void TimerMode::deactivate() {
   Serial.println("[TIMER] Deactivating mode");
   LEDsOff();
 }
 
-void Timer::tick() {  
+void TimerMode::tick() {  
   // Handle button press and state change.
   stateManager.checkStateSwitch();
 
@@ -54,12 +54,12 @@ void Timer::tick() {
   }
 }
 
-void Timer::resetTimer() {
+void TimerMode::resetTimer() {
   timerAccumulatedSeconds = 0;
   timerStartMillis = millis();
 }
 
-void Timer::updateDisplay() {
+void TimerMode::updateDisplay() {
   unsigned long elapsedSeconds = timerAccumulatedSeconds;
   unsigned long delta = (millis() - timerStartMillis) / 1000UL;
   elapsedSeconds += delta;
@@ -78,7 +78,7 @@ void Timer::updateDisplay() {
                 stateManager.getCurrentState() == SystemState::AWAKE ? "AWAKE" : "ASLEEP");
 }
 
-void Timer::updateLEDs() {
+void TimerMode::updateLEDs() {
   // Yellow LED for AWAKE, Blue LED for ASLEEP
   if (stateManager.getCurrentState() == SystemState::AWAKE) {
     // Yellow ON, Blue OFF
@@ -91,7 +91,7 @@ void Timer::updateLEDs() {
   }
 }
 
-void Timer::LEDsOff() {
+void TimerMode::LEDsOff() {
   digitalWrite(WAKE_LED_PIN, LOW);
   digitalWrite(SLEEP_LED_PIN, LOW);
 }

@@ -1,14 +1,14 @@
-#ifndef TIMER_H
-#define TIMER_H
+#ifndef TIMER_MODE_H
+#define TIMER_MODE_H
 
 #include <Arduino.h>
 #include "StateManager.h"
 #include "HardwareConfig.h"
 #include "DisplayHelper.h"
 
-class Timer {
+class TimerMode {
 public:
-  Timer(StateManager& sm, DisplayHelper& dh);
+  TimerMode(StateManager& sm, DisplayHelper& dh);
   
   void activate();
   void deactivate();

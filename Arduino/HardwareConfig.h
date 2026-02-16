@@ -2,9 +2,11 @@
 #define HARDWARE_CONFIG_H
 
 // ========== HARDCODED WIFI CREDENTIALS ==========
-#define WIFI_SSID     "SM-G970U72a"
-#define WIFI_PASSWORD "0000005958"
-#define TIMEZONE      "EST5EDT,M3.2.0/2,M11.1.0/2"  // Eastern Time
+#define WIFI_SSID     "Kelly Highway"
+#define WIFI_PASSWORD "w@yn3_1c3_v@ult"
+
+#define TIMEZONE "EST5EDT,M3.2.0/2,M11.1.0/2"  // Eastern U.S. Time
+#define NTP_SERVER "pool.ntp.org"
 
 // ========== PIN DEFINITIONS ==========
 #define CLK_PIN        18   // TM1637 CLK
