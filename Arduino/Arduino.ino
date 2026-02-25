@@ -33,11 +33,14 @@ MODE
 
 #include <Arduino.h>
 #include <TM1637TinyDisplay6.h>
+#include <Wire.h>
 #include "DisplayHelper.h"
 #include "HardwareConfig.h"
 #include "StateManager.h"
 #include "TimerMode.h"
 #include "ClockMode.h"
+#include "EEPROMHelper.h"
+#include "Config.h"
 
 StateManager stateManager;
 
@@ -45,14 +48,22 @@ TM1637TinyDisplay6 display(CLK_PIN, DIO_PIN);
 DisplayHelper displayHelper(&display);
 WifiHelper wifiHelper;
 
+EEPROMHelper eepromHelper;
+
 TimerMode timerMode(stateManager, displayHelper);
-ClockMode clockMode(stateManager, displayHelper, wifiHelper);
+ClockMode clockMode(stateManager, displayHelper, wifiHelper, eepromHelper);
 
 void setup() {
   // Initialize Serial Monitor
   Serial.begin(115200);
-  delay(50);
+  delay(3000); // Long delay to allow Serial.
   Serial.println("\n=== DREAM Clock Starting ===");
+
+  // Hardcode wifi credentials into the EEPROM
+  DeviceConfig cfg;
+  strncpy(cfg.wifi_ssid,     "WIFI_SSID",     sizeof(cfg.wifi_ssid)     - 1);
+  strncpy(cfg.wifi_password, "WIFI_PASS", sizeof(cfg.wifi_password) - 1);
+  eepromHelper.writeConfig(cfg);
 
   // Initialize pins
   pinMode(MODE_PIN, INPUT_PULLUP); // Button & switch are ACTIVE LOW

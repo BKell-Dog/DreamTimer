@@ -2,8 +2,8 @@
 #define HARDWARE_CONFIG_H
 
 // ========== HARDCODED WIFI CREDENTIALS ==========
-#define WIFI_SSID     "Kelly Highway"
-#define WIFI_PASSWORD "w@yn3_1c3_v@ult"
+#define WIFI_SSID     "YOURSSID"
+#define WIFI_PASSWORD "YOURPASSWORD"
 
 #define TIMEZONE "EST5EDT,M3.2.0/2,M11.1.0/2"  // Eastern U.S. Time
 #define NTP_SERVER "pool.ntp.org"
@@ -15,6 +15,8 @@
 #define BUTTON_PIN     23   // Pushbutton (active LOW)
 #define SLEEP_LED_PIN  16   // LED for ASLEEP state (BLUE)
 #define WAKE_LED_PIN   17   // LED for AWAKE state (YELLOW)
+#define EEPROM_SCL     26   // EEPROM I2C SCL Pin
+#define EEPROM_SDA     25   // EEPROM I2C SDA Pin
 
 // ========== TIMING CONSTANTS ==========
 const unsigned long DISPLAY_UPDATE_MS = 1000UL;       // Display refresh rate

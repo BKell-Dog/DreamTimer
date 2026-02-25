@@ -2,15 +2,23 @@
 
 WifiHelper::WifiHelper() {}
 
+void WifiHelper::wifiConnectBlocking(const char* ssid, const char* password) {
+  _connect(ssid, password);
+}
+
 void WifiHelper::wifiConnectBlocking() {
+  _connect(WIFI_SSID, WIFI_PASSWORD);
+}
+
+void WifiHelper::_connect(const char* ssid, const char* password) {
   if (isConnected()) {
     Serial.println("[WiFi] Already connected");
     return;
   }
 
-  Serial.printf("[WiFi] Connecting to '%s' ...\n", WIFI_SSID);
+  Serial.printf("[WiFi] Connecting to '%s' ...\n", ssid);
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  WiFi.begin(ssid, password);
 
   unsigned long start = millis();
   while (!isConnected() && (millis() - start) < WIFI_CONNECT_TIMEOUT_MS) {
@@ -24,7 +32,6 @@ void WifiHelper::wifiConnectBlocking() {
     Serial.println(WiFi.localIP());
   } else {
     Serial.println("[WiFi] Failed to connect (timeout)");
-    // disable Wi-Fi to save power if not connected
     wifiDisconnectSave();
   }
 }

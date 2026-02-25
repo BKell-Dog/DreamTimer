@@ -7,10 +7,12 @@
 #include "HardwareConfig.h"
 #include "DisplayHelper.h"
 #include "WifiHelper.h"
+#include "EEPROMHelper.h"
+#include "Config.h"
 
 class ClockMode {
 public:
-  ClockMode(StateManager& sm, DisplayHelper& dh, WifiHelper& wh);
+  ClockMode(StateManager& sm, DisplayHelper& dh, WifiHelper& wh, EEPROMHelper& eh);
   
   void activate();
   void deactivate();
@@ -20,6 +22,7 @@ private:
   StateManager& stateManager;
   DisplayHelper& displayHelper;
   WifiHelper& wifiHelper;
+  EEPROMHelper& eepromHelper;
 
   // Clock state
   unsigned long long lastSyncedMillis;
@@ -31,6 +34,8 @@ private:
   void updateDisplay();
   void tryNTPSync();
   time_t getCurrentTime();
+
+  void connectWifi();
 };
 
 #endif
