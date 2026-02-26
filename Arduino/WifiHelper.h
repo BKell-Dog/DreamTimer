@@ -11,13 +11,13 @@ public:
   WifiHelper();
   
   // Connect using explicit credentials.
-  void wifiConnectBlocking(const char* ssid, const char* password);
+  void wifiConnect(const char* ssid, const char* password);
 
   /*
    * Connect using the hardcoded credentials from HardwareConfig.h.
    * Kept as a fallback for when no EEPROM config has been written yet.
    */
-  void wifiConnectBlocking();
+  void wifiConnect();
   
   void wifiDisconnectSave();
   bool isConnected() const { return WiFi.status() == WL_CONNECTED; }
