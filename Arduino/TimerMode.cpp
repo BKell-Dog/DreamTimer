@@ -44,7 +44,8 @@ void TimerMode::tick() {
     
     // Update LEDs and display
     updateLEDs();
-    updateDisplay(); 
+    updateDisplay();
+    lastDisplayUpdate = millis();
   }
   
   // Update display every second

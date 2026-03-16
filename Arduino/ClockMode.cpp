@@ -8,6 +8,7 @@ ClockMode::ClockMode(StateManager& sm, DisplayHelper& dh, WifiHelper& wh, EEPROM
     lastSyncedMillis(0ULL),
     lastSyncedEpoch(0),
     lastNtpSyncAttempt(0),
+    lastWifiConnectAttempt(0),
     lastDisplayUpdate(0) {}
 
 void ClockMode::connectWifi() {
@@ -16,11 +17,11 @@ void ClockMode::connectWifi() {
 
   if (status == EEPROM_OK) {
     Serial.println("[CLOCK] Loaded WiFi credentials from EEPROM");
-    wifiHelper.wifiConnectBlocking(config.wifi_ssid, config.wifi_password);
+    wifiHelper.wifiConnect(config.wifi_ssid, config.wifi_password);
   } else {
     Serial.printf("[CLOCK] No EEPROM config (%s); using hardcoded credentials\n",
                   EEPROMHelper::statusToString(status));
-    wifiHelper.wifiConnectBlocking();
+    wifiHelper.wifiConnect();
   }
 }
 
@@ -49,12 +50,14 @@ void ClockMode::tick() {
   unsigned long now = millis();
 
   // If disconnected, try to reconnect every 5s
-  if (!wifiHelper.isConnected() && (now - lastNtpSyncAttempt >= 5000UL)) {
+  if (!wifiHelper.isConnected() && (now - lastWifiConnectAttempt >= 5000UL)) {
     Serial.println("[CLOCK] Attempting WiFi reconnect...");
     connectWifi();
-    if (wifiHelper.isConnected()) {
-      configTzTime(TIMEZONE, NTP_SERVER);
-    }
+    lastWifiConnectAttempt = now;
+  }
+
+  if (wifiHelper.isConnected() && (now - lastNtpSyncAttempt >= 50000UL)) {
+    configTzTime(TIMEZONE, NTP_SERVER);
     lastNtpSyncAttempt = now;
   }
 

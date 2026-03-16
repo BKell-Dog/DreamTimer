@@ -61,8 +61,8 @@ void setup() {
 
   // Hardcode wifi credentials into the EEPROM
   DeviceConfig cfg;
-  strncpy(cfg.wifi_ssid,     "WIFI_SSID",     sizeof(cfg.wifi_ssid)     - 1);
-  strncpy(cfg.wifi_password, "WIFI_PASS", sizeof(cfg.wifi_password) - 1);
+  strncpy(cfg.wifi_ssid,     WIFI_SSID,     sizeof(cfg.wifi_ssid)     - 1);
+  strncpy(cfg.wifi_password, WIFI_PASSWORD, sizeof(cfg.wifi_password) - 1);
   eepromHelper.writeConfig(cfg);
 
   // Initialize pins

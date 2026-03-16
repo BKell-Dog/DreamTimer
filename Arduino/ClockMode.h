@@ -28,6 +28,7 @@ private:
   unsigned long long lastSyncedMillis;
   time_t lastSyncedEpoch;
   unsigned long lastNtpSyncAttempt;
+  unsigned long lastWifiConnectAttempt;
   unsigned long lastDisplayUpdate;
   
   // Internal methods

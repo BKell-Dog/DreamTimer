@@ -30,11 +30,7 @@ class EEPROMHelper {
 public:
     /*
      * @param i2c_addr   7-bit I2C address of the EEPROM (default 0x50, all addr pins low)
-     * @param page_size  Page size in bytes for your specific part:
-     *                     AT24C32        →  32
-     *                     AT24C64/128    →  64  (default)
-     *                     AT24C256/512   →  64
-     *                     AT24C1024      → 128
+     * @param page_size  Page size in bytes for 24LC256 is 64 by default.
      * @param max_bytes  Total capacity in bytes
      */
     EEPROMHelper(uint8_t i2c_addr = 0x50,
@@ -103,7 +99,7 @@ public:
      /*
      * Scans the I2C bus and prints all responding addresses to Serial.
      * Useful for sanity-checking wiring and confirming the EEPROM is visible.
-     * Static so it can be called without an instance: EEPROMHelper::scanBus()
+     * Static so it can be called without an instance, e.g. EEPROMHelper::scanBus()
      */
     static void scanBus();
 
